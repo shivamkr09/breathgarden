@@ -1,0 +1,21 @@
+{
+  "name": "breathgarden",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A consent-first calm-break garden that grows with your real breathing, powered by the Presage SmartSpectra SDK.",
+  "main": "main.js",
+  "scripts": {
+    "build": "esbuild src/renderer.js --bundle --outfile=dist/renderer.bundle.js --platform=browser --format=iife --log-level=warning && esbuild preload.js --bundle --outfile=dist/preload.bundle.js --platform=node --external:electron --log-level=warning",
+    "start": "npm run build && electron .",
+    "demo": "npm run build && electron . --demo",
+    "web-demo": "npm run build && npx --yes http-server -p 5178 -c-1 ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@smartspectra/node-sdk": "3.5.0"
+  },
+  "devDependencies": {
+    "electron": "^45.3.2",
+    "esbuild": "^0.25.12"
+  }
+}
