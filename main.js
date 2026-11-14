@@ -40,8 +40,16 @@ if (app.isPackaged && !process.env.SMARTSPECTRA_CAPI_PATH) {
 // In demo mode we never load the native SDK at all — no camera, no network.
 const { bindSmartSpectraIpc } = DEMO ? { bindSmartSpectraIpc: null } : require('@smartspectra/node-sdk/main');
 
+// Voice clips generated ahead of time by scripts/generate-voice.mjs (if any).
+function voiceClips() {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'assets', 'voice', 'manifest.json'), 'utf8')).clips || []; }
+  catch { return []; }
+}
+
 ipcMain.handle('breathgarden:config', () => ({
+  voiceClips: voiceClips(),
   demo: DEMO,
+  debug: process.argv.includes('--bg-debug'),
   hasEnvKey: Boolean(ENV_API_KEY),
   platform: process.platform,
 }));

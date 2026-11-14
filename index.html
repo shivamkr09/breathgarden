@@ -4,175 +4,225 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; connect-src 'self';" />
+        content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; connect-src 'self';" />
   <title>Breathgarden</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <canvas id="garden" aria-hidden="true"></canvas>
 
-  <header class="topbar">
-    <div class="brand"><span class="leaf" aria-hidden="true">❦</span> Breathgarden</div>
-    <div class="topbar-right">
-      <span id="source-badge" class="badge" hidden></span>
-      <span id="camera-indicator" class="badge cam" hidden><span class="dot"></span> Camera on</span>
-      <button id="btn-privacy" class="link">Privacy</button>
-    </div>
-  </header>
-
-  <!-- 1. Consent: nothing touches the camera until this is accepted. -->
-  <main id="screen-consent" class="screen card" aria-labelledby="consent-title">
-    <h1 id="consent-title">A few quiet minutes, if you’d like.</h1>
-    <p class="lede">Breathgarden is a night garden that moves with your breathing. Breathe slowly with the guide ring, and flowers grow.</p>
-
-    <div class="grid2">
-      <section>
-        <h2>What it uses</h2>
-        <ul>
-          <li><b>Your camera</b>, only while a session is running. You’ll see a <span class="pill cam"><span class="dot"></span> Camera on</span> badge and your preview the whole time.</li>
-          <li><b>Breathing movement and rate</b>, plus <b>pulse rate</b> and <b>HRV</b>, estimated from the video by the Presage SmartSpectra SDK.</li>
-        </ul>
-      </section>
-      <section>
-        <h2>Where it goes</h2>
-        <ul>
-          <li>Video frames are processed <b>on this computer</b>. No video is uploaded or recorded.</li>
-          <li>Breathgarden <b>saves nothing</b>. Signals stay in memory and are erased when you tap <i>Forget</i> or close the app.</li>
-          <li>The SDK contacts Presage to <b>check the API key</b>. Optional diagnostics are below, <b>off</b> by default.</li>
-        </ul>
-      </section>
-    </div>
-
-    <label class="toggle">
-      <input type="checkbox" id="opt-telemetry" />
-      <span><b>Share SDK diagnostics with Presage</b> (optional). This sends session summaries such as SDK version, device model, frame rates and error codes, linked to the API key’s account. It never sends video or your measured vitals. <a href="#" id="link-telemetry">What exactly?</a></span>
-    </label>
-
-    <p class="note">Breathgarden is for relaxation only. It is <b>not a medical device</b> and does not diagnose, treat or monitor any condition. Please use it only on yourself.</p>
-
-    <label class="toggle consent">
-      <input type="checkbox" id="opt-consent" />
-      <span>I understand. Turn on my camera when I start a session.</span>
-    </label>
-
-    <div class="actions">
-      <button id="btn-consent" class="primary" disabled>Continue</button>
-      <button id="btn-sim-from-consent" class="ghost">Just look around (simulated, no camera)</button>
-    </div>
-  </main>
-
-  <!-- 2. Setup -->
-  <main id="screen-setup" class="screen card" hidden aria-labelledby="setup-title">
-    <h1 id="setup-title">Set your garden</h1>
-
-    <div class="field">
-      <span class="label">How long?</span>
-      <div class="chips" role="radiogroup" aria-label="Session length">
-        <button class="chip" role="radio" data-min="1">1 min</button>
-        <button class="chip on" role="radio" data-min="3" aria-checked="true">3 min</button>
-        <button class="chip" role="radio" data-min="5">5 min</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="label" for="pace">Guide pace: <b id="pace-out">6.0</b> breaths / min</label>
-      <input id="pace" type="range" min="4.5" max="8" step="0.5" value="6" />
-      <span class="help">Slower than everyday breathing. If it feels like a strain, pick a faster pace. Comfort comes first.</span>
-    </div>
-
-    <label class="toggle">
-      <input type="checkbox" id="opt-numbers" />
-      <span><b>Show numbers</b> (breathing rate, pulse, HRV). These are off by default, because for many people watching numbers makes it harder to relax.</span>
-    </label>
-
-    <div class="field" id="key-field" hidden>
-      <label class="label" for="api-key">Presage API key</label>
-      <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key from physiology.presagetech.com" />
-      <span class="help">Kept in memory for this run only. Never written to disk. Or set <code>SMARTSPECTRA_API_KEY</code> in a <code>.env</code> file.</span>
-    </div>
-
-    <div class="actions">
-      <button id="btn-begin" class="primary">Begin</button>
-      <button id="btn-begin-sim" class="ghost">Simulated garden (no camera)</button>
-    </div>
-    <p id="setup-msg" class="msg" role="status"></p>
-  </main>
-
-  <!-- 3. Session HUD -->
-  <section id="screen-session" class="screen hud" hidden aria-label="Breathing session">
-    <div class="guide" aria-live="polite">
-      <div id="guide-word" class="guide-word">Settling in…</div>
-      <div id="hint" class="hint" role="status"></div>
-    </div>
-
-    <div class="hud-bottom">
-      <div class="hud-card">
-        <div class="hud-row">
-          <div><div class="k">Time</div><div id="time-left" class="v">3:00</div></div>
-          <div><div class="k">Flowers</div><div id="flower-count" class="v">0</div></div>
-          <div class="sync">
-            <div class="k">In step with the guide</div>
-            <div class="meter" role="meter" aria-label="Sync with guide" aria-valuemin="0" aria-valuemax="100"><div id="sync-bar"></div></div>
-          </div>
-        </div>
-        <div class="hud-row numbers" id="numbers" hidden>
-          <div><div class="k">Breathing</div><div class="v"><span id="n-br">–</span><small>/min</small></div></div>
-          <div><div class="k">Pulse</div><div class="v"><span id="n-pr">–</span><small>bpm</small></div></div>
-          <div><div class="k">HRV (RMSSD)</div><div class="v"><span id="n-hrv">–</span><small>ms</small></div></div>
-        </div>
-        <div class="trace-wrap">
-          <div class="k">Your breath, live <span id="trace-src"></span></div>
-          <canvas id="trace" height="44"></canvas>
+<!-- 1. Welcome + consent. The camera is never touched before Continue. -->
+<main id="screen-consent" class="screen consent" aria-labelledby="consent-title">
+  <section class="card hero">
+    <div class="brand"><span class="brand-dot" aria-hidden="true"></span>Breathgarden</div>
+    <h1 id="consent-title"><span class="soft">Hi there.</span><br>Let’s take <span id="hero-minutes">three</span> slow minutes.</h1>
+    <p>Breathe with the guide. Your camera reads your breathing, and a small garden grows while you settle.</p>
+    <div class="orb-static" aria-hidden="true"><div class="glow"></div><div class="ring"></div><div class="ball"></div></div>
+    <div class="hero-chips">
+      <div class="glass">
+        <div class="label" id="pace-label">Guide pace</div>
+        <div class="stepper">
+          <button id="pace-down" aria-label="Slower guide pace">−</button>
+          <span class="val" aria-live="polite" aria-labelledby="pace-label"><span id="pace-val">6</span> <span class="unit">/min</span></span>
+          <button id="pace-up" aria-label="Faster guide pace">+</button>
         </div>
       </div>
-
-      <div class="hud-actions">
-        <button id="btn-end" class="ghost">End session <kbd>Esc</kbd></button>
+      <div class="glass">
+        <div class="label" id="len-label">Session</div>
+        <div class="stepper">
+          <button id="len-down" aria-label="Shorter session">−</button>
+          <span class="val" aria-live="polite" aria-labelledby="len-label"><span id="len-val">3</span> <span class="unit">min</span></span>
+          <button id="len-up" aria-label="Longer session">+</button>
+        </div>
       </div>
-    </div>
-
-    <figure class="preview" id="preview-wrap">
-      <video id="preview" muted playsinline autoplay></video>
-      <figcaption><span class="dot"></span> Camera on · <button id="btn-hide-preview" class="link">hide</button></figcaption>
-    </figure>
-
-    <div id="error" class="error" role="alert" hidden>
-      <b id="error-title">Something went wrong</b>
-      <p id="error-msg"></p>
-      <div class="actions"><button id="btn-error-back" class="primary">Back</button></div>
     </div>
   </section>
 
-  <!-- 4. Summary -->
-  <main id="screen-summary" class="screen card" hidden aria-labelledby="summary-title">
-    <h1 id="summary-title">Your garden tonight</h1>
-    <div class="stats">
-      <div><div class="big" id="s-flowers">0</div><div class="k">flowers grown</div></div>
-      <div><div class="big" id="s-sync">0:00</div><div class="k">in step with the guide</div></div>
-      <div><div class="big" id="s-time">0:00</div><div class="k">total time</div></div>
+  <section class="consent-col">
+    <div class="promises">
+      <div class="tile"><div class="tile-head">Camera <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F26A1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg></div><div><div class="mid">Only <span class="unit">while</span></div><div class="label">On when you start, off at the end.</div></div></div>
+      <div class="tile"><div class="tile-head">Processing <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F26A1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div><div><div class="mid">On <span class="unit">device</span></div><div class="label">No video uploaded.</div></div></div>
+      <div class="tile"><div class="tile-head">Storage <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F26A1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></div><div><div class="mid">None</div><div class="label">Forget clears memory.</div></div></div>
     </div>
-    <div id="s-trends" class="trends"></div>
-    <p class="note">Nothing from this session has been saved. It lives in memory until you tap Forget or close the app. These are wellness estimates, not medical measurements.</p>
-    <div class="actions">
-      <button id="btn-again" class="primary">Breathe again</button>
-      <button id="btn-forget" class="ghost">Forget this session</button>
-    </div>
-  </main>
 
-  <!-- Privacy dialog -->
-  <dialog id="privacy">
-    <h2>Privacy &amp; data handling</h2>
-    <ul>
-      <li><b>Camera:</b> requested only after you accept the consent screen and press Begin. The app grants itself video only (never the microphone), and only to its own bundled page.</li>
-      <li><b>Processing:</b> frames go from this window to the SmartSpectra engine in the app’s own process, on this computer. Breathgarden never uploads, records or screenshots video.</li>
-      <li><b>Storage:</b> none. Breathing trace, rates, pulse and HRV live in memory for the current session. <i>Forget</i> clears them, and closing the app clears everything.</li>
-      <li><b>Network:</b> the SDK authenticates your API key with Presage over TLS. If you turn on diagnostics, it also sends session summaries and device readiness reports. These contain SDK and device info, frame rates and error codes, and may contain technical free text. They never contain frames or measured vitals, and authenticated requests can be linked to the API key’s account. They are kept under Presage’s policies.</li>
-      <li><b>AI services:</b> none. Breathgarden does not use LLM Insights or any other AI service.</li>
-      <li><b>Not medical:</b> relaxation only. No diagnosis, treatment or monitoring.</li>
+    <div class="card light consent-card">
+      <h2>Before we start</h2>
+      <p>The Presage SmartSpectra SDK estimates breathing, pulse rate and HRV from the video on this computer. It contacts Presage only to check your API key, plus diagnostics if you allow them. <button class="link" id="btn-privacy">Privacy details</button></p>
+
+      <label class="row-toggle">
+        <span><span class="t">Share SDK diagnostics</span><span class="d">Version, device, frame rates, error codes. Never video or vitals.</span></span>
+        <input type="checkbox" id="opt-telemetry" />
+      </label>
+      <fieldset class="options">
+        <legend class="label">Optional extras</legend>
+        <label class="opt"><input type="checkbox" id="opt-voice" /><span><span class="t">Voice guide</span><span class="d">Eyes-closed friendly</span></span></label>
+        <label class="opt"><input type="checkbox" id="opt-sound" /><span><span class="t">Sound garden</span><span class="d">Your signals as music</span></span></label>
+        <label class="opt"><input type="checkbox" id="opt-numbers" /><span><span class="t">Show numbers</span><span class="d">Off helps you relax</span></span></label>
+      </fieldset>
+      <div class="field" id="key-field" hidden>
+        <label class="label" for="api-key">Presage API key (kept in memory only)</label>
+        <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste key from physiology.presagetech.com" />
+      </div>
+      <label class="row-toggle agree" id="consent-row">
+        <input type="checkbox" id="opt-consent" />
+        <span><span class="t">Turn on my camera for this session. I’m only measuring myself.</span></span>
+      </label>
+      <p class="fine">For relaxation only. Not a medical device. No diagnosis, treatment or monitoring.</p>
+      <p class="msg" id="consent-msg" role="status"></p>
+      <div class="actions">
+        <button class="btn primary grow" id="btn-continue" disabled>Continue</button>
+        <button class="btn" id="btn-sim">Try without camera</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 2. Framing check: what the camera sees -->
+<main id="screen-calibrate" class="screen calibrate" hidden aria-labelledby="cal-title">
+  <section class="camview" id="camview" aria-label="Camera preview. Left: what you see. Right: what the camera sees.">
+    <video class="cam-base" id="cam-base" muted playsinline autoplay></video>
+    <div class="cam-color-wrap" id="cam-color-wrap"><video id="cam-color" muted playsinline autoplay></video></div>
+    <div class="cam-sim" id="cam-sim" hidden>Simulated signal · no camera</div>
+    <canvas class="cam-overlay" id="cam-overlay" aria-hidden="true"></canvas>
+    <span class="cam-tag you">What you see</span>
+    <span class="cam-tag sees">What the camera sees</span>
+    <div class="split-line" id="split-line"></div>
+    <button class="split-handle" id="split-handle" role="slider" aria-label="Compare what you see with what the camera sees" aria-valuemin="0" aria-valuemax="100" aria-valuenow="18">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg>
+    </button>
+    <span class="callout co-pulse"><span class="dot"></span><span class="co-t">Pulse · reading</span></span>
+    <span class="callout co-breath"><span class="dot grey"></span><span class="co-t">Breathing · reading</span></span>
+    <div class="cam-bottom">
+      <span class="hint-pill" id="cam-hint"></span>
+      <span class="cam-caption">Drag to compare. The dots and lines show where SmartSpectra looks. Nothing is recorded.</span>
+    </div>
+  </section>
+
+  <section class="card checklist">
+    <div class="s-head"><span class="label">Getting ready</span><span class="chips"><span class="chip" id="cal-source"></span><span class="chip cam" id="cal-cam" hidden><span class="dot"></span>Camera on</span></span></div>
+    <h1 id="cal-title">Let’s make sure the garden can see you.</h1>
+    <p>Fit your face inside the corners and let your shoulders show. The garden opens by itself when every check is ready.</p>
+    <ul class="checks" id="checks">
+      <li data-group="face" data-state="pending"><span class="state"></span><span><span class="t">One face, facing forward</span><span class="d">Checking…</span></span></li>
+      <li data-group="frame" data-state="pending"><span class="state"></span><span><span class="t">Centred, good distance</span><span class="d">Checking…</span></span></li>
+      <li data-group="light" data-state="pending"><span class="state"></span><span><span class="t">Soft, even light</span><span class="d">Checking…</span></span></li>
+      <li data-group="still" data-state="pending"><span class="state"></span><span><span class="t">Settled and still</span><span class="d">Checking…</span></span></li>
     </ul>
-    <form method="dialog"><button class="primary">Close</button></form>
-  </dialog>
+    <div>
+      <div class="ready-row"><span id="ready-count">0 of 4 ready</span><span id="ready-note">Opens automatically</span></div>
+      <div class="progress"><div id="ready-bar"></div></div>
+    </div>
+    <div class="actions">
+      <button class="btn grow" id="btn-cal-back">Back</button>
+      <button class="btn grow" id="btn-cal-off">Turn camera off</button>
+      <button class="btn primary grow" id="btn-cal-anyway" hidden>Start anyway</button>
+    </div>
+  </section>
+</main>
 
-  <script src="dist/renderer.bundle.js"></script>
+<!-- 3. Session -->
+<main id="screen-session" class="screen session" hidden aria-label="Breathing session">
+  <section class="card s-hero" aria-label="Breathing guide">
+    <canvas id="orb" aria-hidden="true"></canvas>
+    <div class="s-head">
+      <div class="brand sm"><span class="brand-dot" aria-hidden="true"></span>Breathgarden</div>
+      <span class="chips"><button class="chip chip-btn" id="btn-sound" aria-pressed="false">Sound off</button><span class="chip" id="s-source"></span><span class="chip cam" id="s-cam" hidden><span class="dot"></span>Camera on</span></span>
+    </div>
+    <div class="guide-word" id="guide-word" aria-live="polite">Settling in…</div>
+    <div class="guide-sub" id="guide-sub">Match the bloom to the ring.</div>
+    <span class="hint-pill" id="s-hint" role="status"></span>
+    <div class="s-chips">
+      <div class="glass"><div class="label">In step</div><div class="mid"><span id="sync-val">0</span> <span class="unit">%</span></div></div>
+      <div class="glass"><div class="label">Flowers</div><div class="mid"><span id="flower-val">0</span> <span class="unit">grown</span></div></div>
+    </div>
+    <div class="blossoms" id="blossoms" aria-hidden="true"></div>
+  </section>
+
+  <section class="card light chart-card" aria-label="Breathing rate this session">
+    <div class="chart-head"><span class="t">Breathing rate</span><span class="mid" id="rate-big"><span id="rate-big-v">–</span> <span class="unit">/min</span></span></div>
+    <canvas id="rate-chart" aria-hidden="true"></canvas>
+    <div class="axis" id="rate-axis"></div>
+  </section>
+
+  <section class="card s-cam" aria-label="What the camera sees, live">
+    <div class="camview cam-live" id="camlive">
+      <video class="cam-base" muted playsinline autoplay></video>
+      <div class="cam-sim" hidden>Simulated signal · no camera</div>
+      <canvas class="cam-overlay" aria-hidden="true"></canvas>
+      <span class="cam-tag sees">What the camera sees</span>
+      <span class="callout co-pulse"><span class="dot"></span><span class="co-t">Pulse · reading</span></span>
+      <span class="callout co-breath"><span class="dot grey"></span><span class="co-t">Breathing · reading</span></span>
+      <button class="chip chip-btn cam-hide" id="btn-hide-video" aria-pressed="false">Hide video</button>
+    </div>
+    <div class="trace-strip">
+      <div class="strip-head"><span class="t">Your breath · live</span><span class="cycles" id="cycles"></span><span class="label" id="trace-src">SmartSpectra chest trace</span></div>
+      <canvas id="trace" aria-hidden="true"></canvas>
+    </div>
+  </section>
+
+  <section class="tiles" aria-label="Live signals">
+    <div class="tile"><div class="tile-head">Pulse rate <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="#F26A1F"/></svg></div><div><div class="live-note" id="pr-note"></div><div class="big"><span id="pr-val">–</span> <span class="unit">bpm</span></div></div></div>
+    <div class="tile"><div class="tile-head">Breathing <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F26A1F" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/></svg></div><div><div class="live-note" id="br-note"></div><div class="big"><span id="br-val">–</span> <span class="unit">/min</span></div></div></div>
+    <div class="tile"><div class="tile-head">HRV <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F26A1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h5l2-5 4 10 2-5h7"/></svg></div><div><div class="live-note" id="hrv-note">RMSSD</div><div class="big"><span id="hrv-val">–</span> <span class="unit">ms</span></div></div></div>
+    <div class="tile dark"><div class="tile-head">Time left <button class="btn small on-dark" id="btn-end">End <span class="kbd">Esc</span></button></div><div class="big"><span id="time-left">3:00</span> <span class="unit">of <span id="time-total">3:00</span></span></div></div>
+  </section>
+</main>
+
+<!-- 4. Summary -->
+<main id="screen-summary" class="screen summary" hidden aria-labelledby="sum-title">
+  <section class="card sum-left">
+    <span class="label lg">Session complete</span>
+    <h1 id="sum-title">Seven flowers <span class="unit">tonight.</span></h1>
+    <figure class="postcard-fig">
+      <canvas id="postcard" width="940" height="880" role="img" aria-label="Your garden postcard"></canvas>
+      <figcaption>Your breath-print postcard. The hills are shaped by your breathing. No numbers.</figcaption>
+    </figure>
+  </section>
+  <section class="sum-right">
+    <div class="stats">
+      <div class="tile"><div class="tile-head">Flowers</div><div class="big" id="st-flowers">0</div></div>
+      <div class="tile"><div class="tile-head">In step</div><div class="big" id="st-sync">0:00</div></div>
+      <div class="tile"><div class="tile-head">Total</div><div class="big" id="st-total">0:00</div></div>
+    </div>
+    <div class="card light trends">
+      <div class="chart-head mb"><span class="t">Start → end</span><span class="label" id="trend-note">first minute vs last minute</span></div>
+      <div id="trends"></div>
+    </div>
+    <div class="card light sum-actions">
+      <p class="fine" id="sum-privacy">Nothing has been saved. Readings stay in memory until you tap Forget or close the app. Saving the postcard stores only the picture (hills shaped by your breathing, no numbers). These are wellness estimates, not medical measurements.</p>
+      <div class="actions">
+        <button class="btn primary grow" id="btn-again">Breathe again</button>
+        <button class="btn" id="btn-save">Save postcard</button>
+        <button class="btn" id="btn-forget">Forget session</button>
+      </div>
+      <p class="msg quiet" id="sum-msg" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="error" role="alertdialog" aria-labelledby="error-title" hidden>
+  <div class="modal-card">
+    <h2 id="error-title">Something went wrong</h2>
+    <p id="error-msg"></p>
+    <div class="actions"><button class="btn primary grow" id="btn-error-back">Back</button></div>
+  </div>
+</div>
+
+<dialog id="privacy" aria-labelledby="privacy-title">
+  <h2 id="privacy-title">Privacy &amp; data handling</h2>
+  <ul>
+    <li><b>Camera:</b> requested only after you accept the consent step and press Continue. The app grants itself video only (never the microphone), and only to its own bundled page. A “Camera on” badge and a preview are shown whenever it is on.</li>
+    <li><b>Processing:</b> frames go from this window to the SmartSpectra engine in the app’s own process, on this computer. Breathgarden never uploads or records video.</li>
+    <li><b>Storage:</b> none by default. Breathing trace, rates, pulse and HRV live in memory for the current session. <i>Forget</i> clears them, and closing the app clears everything. <i>Save postcard</i> writes only the garden picture to a file you choose: hills shaped by your breathing pattern, the date, minutes and flower count. It contains no numbers or readings.</li>
+    <li><b>Network:</b> the SDK checks your API key with Presage over TLS. If you turn on diagnostics, it also sends session summaries and readiness reports (SDK and device info, frame rates, error codes, possibly technical free text). They never contain frames or measured vitals, but they can be linked to the API key’s account. Retention follows Presage’s policies.</li>
+    <li><b>Talking:</b> the SDK’s talking signal only pauses the garden while you speak. No audio is captured; the microphone is never used.</li>
+    <li><b>Voice guide:</b> optional, off by default. It plays short clips that were generated once with ElevenLabs text-to-speech from fixed phrases (no personal data), or your computer’s built-in voice. Nothing is sent anywhere during a session, and it never speaks your readings.</li>
+    <li><b>Sound garden:</b> optional, off by default. The music is synthesized on this computer from your signals; nothing is recorded or sent.</li>
+    <li><b>AI services:</b> none.</li>
+    <li><b>Not medical:</b> relaxation only. No diagnosis, treatment or monitoring.</li>
+  </ul>
+  <form method="dialog"><button class="btn primary">Close</button></form>
+</dialog>
+
+<script src="dist/renderer.bundle.js"></script>
 </body>
 </html>
