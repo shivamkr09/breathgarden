@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Breathgarden cover</title>
+<style>
+@font-face { font-family: Figtree; src: url("../node_modules/@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2") format("woff2"); font-weight: 300 900; }
+html, body { margin: 0; width: 1000px; height: 420px; overflow: hidden; background: #E4E4E7; font-family: Figtree, sans-serif; color: #1D1D1F; }
+.wrap { position: absolute; inset: 14px; display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; }
+.card { position: relative; overflow: hidden; border-radius: 24px; background: linear-gradient(160deg, #F3F3F4, #E9E9EB); box-shadow: inset 0 1px 0 #fff; }
+.hero { padding: 34px 36px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; }
+.dot { width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFD9BF, #F26A1F 70%); }
+h1 { margin: 26px 0 0; font-size: 36px; line-height: 1.08; font-weight: 600; letter-spacing: -0.025em; max-width: 290px; }
+h1 .soft { color: #8E8E93; font-weight: 400; }
+p { margin: 14px 0 0; font-size: 15px; color: #6E6E73; max-width: 280px; line-height: 1.45; }
+.chips { position: absolute; left: 36px; bottom: 28px; display: flex; gap: 8px; }
+.chip { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.85); font-size: 13px; font-weight: 500; }
+.chip.o { background: rgba(242,106,31,.14); color: #C2410C; }
+.orb { position: absolute; right: 30px; top: 118px; width: 128px; height: 128px; }
+.orb .g { position: absolute; inset: -50px; border-radius: 50%; background: radial-gradient(circle, rgba(242,106,31,.22), rgba(242,106,31,0) 68%); }
+.orb .r { position: absolute; inset: -20px; border-radius: 50%; border: 2px dotted rgba(242,106,31,.5); }
+.orb .b { position: absolute; inset: 0; border-radius: 48% 52% 50% 50% / 52% 48% 52% 48%; background: radial-gradient(circle at 34% 30%, #FFE3CF, #F9A66C 38%, #F26A1F 72%, #B9480C); box-shadow: 0 24px 50px rgba(242,106,31,.3); }
+.cam { background: radial-gradient(ellipse at 55% 35%, #5B5B60, #3A3A3F 45%, #232327); }
+.tag { position: absolute; top: 16px; left: 16px; padding: 6px 12px; border-radius: 999px; background: rgba(20,20,22,.85); color: #fff; font-size: 13px; font-weight: 500; }
+.call { position: absolute; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 500; }
+.call i { width: 7px; height: 7px; border-radius: 50%; background: #E5484D; display: inline-block; }
+.call i.g2 { background: #8E8E93; }
+svg { position: absolute; inset: 0; }
+</style></head>
+<body><div class="wrap">
+  <section class="card hero">
+    <div class="brand"><span class="dot"></span>Breathgarden</div>
+    <h1>Breathe with the ring. <span class="soft">A garden grows.</span></h1>
+    <p>Checks you’re really following, shows what the camera sees, and talks you through it eyes-closed.</p>
+    <div class="orb"><div class="g"></div><div class="r"></div><div class="b"></div></div>
+    <div class="chips"><span class="chip o">Presage SmartSpectra</span><span class="chip">Breath · Pulse · HRV · Talking</span></div>
+  </section>
+  <section class="card cam">
+    <svg width="452" height="392" viewBox="0 0 452 392" id="ov"></svg>
+    <span class="tag">What the camera sees</span>
+    <span class="call" style="left: 290px; top: 92px"><i></i>Pulse 71 bpm</span>
+    <span class="call" style="left: 270px; top: 268px"><i class="g2"></i>Breathing 6 /min</span>
+  </section>
+</div>
+<script>
+const svg = document.getElementById('ov'), NS = 'http://www.w3.org/2000/svg';
+const add = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); return e; };
+const cx = 200, cy = 150, ry = 70, rx = 55;
+for (let y = cy - ry; y <= cy + ry; y += 9) for (let x = cx - rx; x <= cx + rx; x += 9) {
+  const nx = (x - cx) / rx, ny = (y - cy) / ry; if (nx * nx + ny * ny > 1) continue;
+  const warm = (ny < -0.45 && Math.abs(nx) < 0.7) || (Math.abs(nx) > 0.3 && ny > -0.05 && ny < 0.45);
+  add('circle', { cx: x, cy: y, r: 1.7, fill: warm ? 'rgba(239,90,96,.9)' : 'rgba(255,255,255,.55)' });
+}
+const bx = rx + 20, by = ry + 20, L = 22;
+add('path', { d: `M${cx-bx} ${cy-by+L}V${cy-by}H${cx-bx+L}M${cx+bx-L} ${cy-by}H${cx+bx}V${cy-by+L}M${cx+bx} ${cy+by-L}V${cy+by}H${cx+bx-L}M${cx-bx+L} ${cy+by}H${cx-bx}V${cy+by-L}`, stroke: '#fff', 'stroke-width': 2.4, fill: 'none', 'stroke-linecap': 'round' });
+for (let i = 0; i < 4; i++) { const y = 268 + i * 22, h = 120 + i * 12; add('path', { d: `M${cx-h} ${y} Q${cx} ${y-18} ${cx+h} ${y}`, stroke: `rgba(255,255,255,${0.75 - i * 0.15})`, 'stroke-width': 2, 'stroke-dasharray': '6 7', fill: 'none' }); }
+add('line', { x1: cx + 14, y1: cy - 32, x2: 290, y2: 108, stroke: 'rgba(255,255,255,.85)', 'stroke-width': 1.4 }); add('circle', { cx: cx + 14, cy: cy - 32, r: 4, fill: '#fff' });
+add('line', { x1: cx + 6, y1: 290, x2: 270, y2: 284, stroke: 'rgba(255,255,255,.85)', 'stroke-width': 1.4 }); add('circle', { cx: cx + 6, cy: 290, r: 4, fill: '#fff' });
+</script></body></html>

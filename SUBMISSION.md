@@ -2,9 +2,12 @@
 title: Breathgarden — a breathing guide that checks you're really following it, shows what the camera sees, and talks you through it eyes-closed
 published: false
 tags: devchallenge, presagechallenge, electron, accessibility
+cover_image: https://raw.githubusercontent.com/shivamkr09/breathgarden/main/docs/cover.png
 ---
 
 *This is a submission for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04)*
+
+> **Breathe with the ring and a garden grows. But only if you're *really* following it.** Breathgarden reads your breathing and pulse from your webcam with SmartSpectra, shows you what the camera sees, adapts its pace to you, and can talk you through it with your eyes closed.
 
 ## What I Built
 
@@ -61,6 +64,9 @@ sdk.on('metrics', (buf) => {
 });
 ```
 
+![A real 3-minute live session: 10 flowers, 1:29 in step, and a breath-print postcard drawn from my own breathing](https://raw.githubusercontent.com/shivamkr09/breathgarden/main/docs/live-summary.png)
+*A real 3-minute live session: 10 flowers, 1 minute 29 seconds in step, and a breath-print postcard drawn from my own breathing.*
+
 ### What I learned tuning it on real sessions
 
 I recorded the app's numbers (never video) during live runs and tuned from them:
@@ -68,6 +74,7 @@ I recorded the app's numbers (never video) during live runs and tuned from them:
 - **Run 1: zero flowers.** The guide asked for 6 breaths/min immediately, and the SDK's breathing rate was too jumpy second to second (13.7 → 24 → 11.8) to judge "in step". So "in step" became the trace-to-ring correlation.
 - **Run 2: 2 flowers in 54 s.** Real traces are noisier than my simulation (median |r| 0.49). A 15-second window and a threshold matched to real data fixed it, while keeping free breathing at about a 4% false pass rate.
 - **Run 3: 7 flowers in the first 85 s, then none.** The guide kept slowing below 7.5/min; I sped up and stopped following. That's why the guide is now a closed loop.
+- **Run 4, with the closed loop: 10 flowers and 1:29 in step over 3 minutes** (pictured above).
 - **macOS camera quirk:** camera permission belongs to the app that *launched* Electron. From the wrong parent, the track is "live" but delivers zero frames and the SDK times out. Breathgarden checks `systemPreferences` and explains the fix within 7 seconds.
 
 ## Prize Categories
