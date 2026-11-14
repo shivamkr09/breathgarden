@@ -1,6 +1,6 @@
 ---
 title: Breathgarden — a breathing guide that checks you're really following it, shows what the camera sees, and talks you through it eyes-closed
-published: false
+published: true
 tags: devchallenge, presagechallenge, electron, accessibility
 cover_image: https://raw.githubusercontent.com/shivamkr09/breathgarden/main/docs/cover.png
 ---
@@ -24,7 +24,9 @@ Lots of breathing apps animate something with your breath. Breathgarden does fou
 
 ## Demo
 
-<!-- TODO: embed demo video: consent → "what the camera sees" framing check → session (camera panel, guide easing, voice + sound) → summary + breath-print postcard -->
+{% embed https://youtu.be/olJV3fq0qbI %}
+
+The session is a real, unedited 3-minute live recording. The opening consent screen is a still, and the narration was added afterwards with ElevenLabs. It covers the "What the camera sees" framing check, then the session. You can see the orb following my chest, the dots pulsing with my heartbeat, flowers growing while I follow the ring, the garden pausing while I talk, and the guide easing back when I fell behind. It ends with the breath-print postcard. The **Live · SmartSpectra** badge and live pulse, breathing and HRV values are on screen throughout.
 
 ## Code
 
@@ -101,4 +103,4 @@ I recorded the app's numbers (never video) during live runs and tuned from them:
 
 ## Agent Session
 
-<!-- Optional: upload the Claude Code transcript at https://dev.to/agent_sessions/new, remove the API keys from it, Make Public, embed here. -->
+<!-- Upload breathgarden-claude-code-session.jsonl (keys already removed) at https://dev.to/agent_sessions/new, press Make Public, and paste its embed here. Delete this section if you skip it. -->
