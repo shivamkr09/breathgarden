@@ -12,4 +12,5 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('breathgarden', {
   getConfig: () => ipcRenderer.invoke('breathgarden:config'),
   getEnvKey: () => ipcRenderer.invoke('breathgarden:env-key'),
+  cameraAccess: () => ipcRenderer.invoke('breathgarden:camera-access'),
 });

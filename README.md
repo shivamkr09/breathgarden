@@ -29,6 +29,8 @@ npm start              # builds the renderer/preload bundles and launches Electr
 
 No `.env`? You can paste the key on the setup screen instead. It is kept in memory only.
 
+On macOS you can also double-click **`start-breathgarden.command`**. It opens Terminal, installs dependencies if needed, and starts the app, so macOS asks Terminal for camera access.
+
 Other modes:
 
 ```bash
@@ -37,6 +39,15 @@ npm run web-demo   # simulated garden in a normal browser at http://localhost:51
 ```
 
 Diagnostics: `SMARTSPECTRA_DIAGNOSTICS=1 npm start` opens DevTools and turns on the SDK's IPC logging.
+
+### Troubleshooting: black preview / "No camera frames" on macOS
+
+macOS decides camera permission based on the app that **launched** Breathgarden: Terminal, iTerm, VS Code, and so on. If that app isn't allowed, the camera opens but delivers no frames. The SDK then stalls at "Starting" and eventually reports `ProcessingFailed`. To fix it:
+
+1. Run `npm start` from a terminal app you control. macOS should ask for camera access on the first session. Click Allow.
+2. If you previously denied it, open **System Settings › Privacy & Security › Camera** and turn on that terminal app. Then quit and relaunch Breathgarden from it.
+
+Breathgarden checks the macOS camera status before starting. If no frames arrive within 7 seconds, it shows this guidance instead of a generic error.
 
 ## How the SDK is integrated
 

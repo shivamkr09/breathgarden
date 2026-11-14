@@ -114,11 +114,40 @@ async function beginSession(kind) {
   show('session');
 
   wire(source);
+  if (kind === 'presage') {
+    const access = await window.breathgarden.cameraAccess().catch(() => 'unknown');
+    if (access === 'denied' || access === 'restricted') {
+      showError({ name: 'Camera blocked by macOS', message: CAMERA_BLOCKED_HELP });
+      return;
+    }
+  }
   try {
     await source.start();
   } catch (err) {
     showError({ name: err.code ?? 'Error', message: err.message || String(err) });
   }
+}
+
+const CAMERA_BLOCKED_HELP =
+  'macOS isn’t giving this app any camera frames. Open System Settings › Privacy & Security › Camera and allow ' +
+  'the app you launched Breathgarden from (for example Terminal or iTerm). Then quit and reopen Breathgarden from that app.';
+
+// The OS can hand back a "live" camera track that never delivers a frame when
+// camera permission belongs to a different (parent) app. Catch that quickly
+// instead of waiting for the SDK's 30 s startup watchdog.
+function watchForFrames(video, source) {
+  const deadline = performance.now() + 7000;
+  const check = () => {
+    if (source !== app.source || !app.session || app.session.ended) return;
+    if (video.videoWidth > 0) return; // frames are flowing
+    if (performance.now() > deadline) {
+      source.stop().catch(() => {});
+      showError({ name: 'No camera frames', message: CAMERA_BLOCKED_HELP });
+      return;
+    }
+    setTimeout(check, 500);
+  };
+  check();
 }
 
 function wire(source) {
@@ -130,6 +159,7 @@ function wire(source) {
   source.on('stream', (stream) => {
     const v = $('preview'); v.srcObject = stream; v.play().catch(() => {});
     $('camera-indicator').hidden = false;
+    watchForFrames(v, source);
   });
   source.on('hint', (h) => {
     const s = app.session; if (!s) return;

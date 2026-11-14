@@ -14,7 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, systemPreferences } = require('electron');
 
 const DEMO = process.argv.includes('--demo');
 
@@ -47,6 +47,17 @@ ipcMain.handle('breathgarden:config', () => ({
 }));
 // The renderer asks for the env key only at the moment it builds the SDK.
 ipcMain.handle('breathgarden:env-key', () => ENV_API_KEY);
+
+// macOS camera permission (TCC) is separate from Chromium's permission check:
+// if the OS denies it, getUserMedia can still "succeed" but deliver no frames.
+// Called only after in-app consent, right before the session starts.
+ipcMain.handle('breathgarden:camera-access', async () => {
+  if (DEMO) return 'denied';
+  if (process.platform !== 'darwin') return 'granted';
+  let status = systemPreferences.getMediaAccessStatus('camera');
+  if (status === 'not-determined') status = (await systemPreferences.askForMediaAccess('camera')) ? 'granted' : 'denied';
+  return status;
+});
 
 function createWindow() {
   const win = new BrowserWindow({
