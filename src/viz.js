@@ -188,25 +188,32 @@ function drawPostcard(canvas, { flowers, minutes, date, print = [], flowerTimes 
   ctx.fillStyle = sun; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, TAU); ctx.fill();
 
   const hasPrint = print.length >= 12;
-  const N = 140;
+  // ~2 samples per point keeps each breath (~12+ points) while smoothing removes noise.
+  const N = Math.max(140, Math.min(360, Math.round(print.length / 2)));
   const base = (i) => h * 0.66 - Math.sin((i / (N - 1)) * Math.PI) * h * 0.05; // a gentle arc
   let front = null;
   if (hasPrint) {
     // Back hill: your breathing, heavily smoothed (the slow shape of the session).
-    const back = resample(print, N, 9);
+    const back = resample(print, N, Math.round(N / 15));
     ctx.fillStyle = '#E7DCC9';
     ctx.beginPath(); ctx.moveTo(0, h);
     back.forEach((v, i) => ctx.lineTo((i / (N - 1)) * w, base(i) - h * 0.06 - (v - 0.5) * h * 0.08));
     ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
     // Front hill: each breath becomes a rolling hill.
-    const fr = resample(print, N, 1);
-    front = fr.map((v, i) => base(i) + (0.5 - v) * h * 0.07);
+    // Real traces are noisy, so smooth a little and draw with curves through the
+    // midpoints: each breath reads as a rolling hill rather than a scribble.
+    const fr = resample(print, N, 2);
+    front = fr.map((v, i) => base(i) + (0.5 - v) * h * 0.06);
+    const X = (i) => (i / (N - 1)) * w;
+    const curve = () => {
+      ctx.moveTo(0, front[0]);
+      for (let i = 1; i < N - 1; i++) ctx.quadraticCurveTo(X(i), front[i], (X(i) + X(i + 1)) / 2, (front[i] + front[i + 1]) / 2);
+      ctx.lineTo(w, front[N - 1]);
+    };
     ctx.fillStyle = '#DCE5D3';
-    ctx.beginPath(); ctx.moveTo(0, h);
-    front.forEach((y, i) => ctx.lineTo((i / (N - 1)) * w, y));
-    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); curve(); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = 'rgba(127,163,122,0.55)'; ctx.lineWidth = w * 0.004; ctx.lineJoin = 'round';
-    ctx.beginPath(); front.forEach((y, i) => (i ? ctx.lineTo((i / (N - 1)) * w, y) : ctx.moveTo(0, y))); ctx.stroke();
+    ctx.beginPath(); curve(); ctx.stroke();
   } else {
     ctx.fillStyle = '#DCE5D3';
     ctx.beginPath(); ctx.ellipse(w / 2, h * 1.02, w * 0.75, h * 0.42, 0, 0, TAU); ctx.fill();

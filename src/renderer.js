@@ -536,7 +536,8 @@ function renderSummary(s) {
     soft.textContent = 'Slow, steady breaths grow flowers.';
   } else {
     title.append(`${cap(word(s.flowers))} ${s.flowers === 1 ? 'flower' : 'flowers'} `);
-    soft.textContent = 'tonight.';
+    const hr = new Date().getHours();
+    soft.textContent = hr < 5 || hr >= 21 ? 'tonight.' : hr < 12 ? 'this morning.' : hr < 17 ? 'this afternoon.' : 'this evening.';
   }
   title.append(soft);
   $('st-flowers').textContent = String(s.flowers);
@@ -635,6 +636,13 @@ function debugSnapshot() {
     window.__bgDebug = debugSnapshot;
     // Simulated mode only: pretend to talk, to check the pause behaviour.
     window.__bgSimTalk = () => { if (app.source && app.source.kind === 'simulated') app.source.emit('talking', true); };
+    // Draw a postcard from a synthetic noisy breath print, to check the hills look right.
+    window.__bgPostcardTest = () => {
+      const print = []; let seed = 3; const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      for (let i = 0; i < 720; i++) print.push(Math.min(1, Math.max(0, 0.5 + 0.45 * Math.sin(i / 4) + (rnd() - 0.5) * 0.5)));
+      drawPostcard($('postcard'), { flowers: 10, minutes: 3, date: '14 Nov', print, flowerTimes: [8, 20, 31, 45, 58, 70, 84, 95, 110, 130], duration: 180 });
+      show('summary');
+    };
     window.__bgSimFollow = (on) => { if (app.source && app.source.kind === 'simulated') app.source.follow = on; };
   }
   enterConsent();
